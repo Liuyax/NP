@@ -1,0 +1,71 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#define    FINISH_FLAG    "FILE_TRANSPORT_FINISH"
+#define    MAXLINE        1024*16
+
+void usage(char *command)
+{
+	printf("usage :%s ipaddr portnum filename\n", command);
+	exit(0);
+}
+int main(int argc,char **argv)
+{
+	FILE                   *fp;
+	struct sockaddr_in     server_addr;
+	char                   buf[MAXLINE];
+	int                    sock_id,read_len,send_len,serv_addr_len,ret,i;
+
+	if (argc != 4) {
+		usage(argv[0]);
+	}
+	if ((fp = fopen(argv[3],"rb")) == NULL) {
+		perror("Open file failed\n");
+		exit(0);
+	}
+	if ((sock_id = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("Create socket failed");
+		exit(0);
+	}
+	memset(&server_addr,0,sizeof(server_addr));
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(atoi(argv[2]));
+	inet_pton(AF_INET, argv[1], &server_addr.sin_addr);
+	serv_addr_len = sizeof(server_addr);
+	ret = connect(sock_id, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
+	if (ret == -1) {
+		perror("Connect socket failed!\n");
+		exit(0);
+	}
+	bzero(buf, MAXLINE);
+	while ( (read_len = fread(buf, sizeof(char), MAXLINE, fp)) == MAXLINE )
+	{
+		send_len = send(sock_id, buf, read_len, 0);
+		if ( send_len < 0 ) {
+			perror("Send data failed\n");
+			exit(0);
+		}
+		bzero(buf, MAXLINE);
+	}
+	if(feof(fp)==0)
+	{
+		sprintf(buf,"error");
+		send(sock_id,buf,6,0);
+	}
+
+	fclose(fp);
+	memset(buf,0,10);
+	sprintf(buf,"finish");
+	send(sock_id,buf,7,0);
+	close(sock_id);
+	printf("Send finish\n");
+	return 0;
+}
