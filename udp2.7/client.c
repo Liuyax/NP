@@ -20,6 +20,8 @@ void *part1(void *buf1);
 void *part2(void *buf2);
 
 unsigned int off_len = 1024*1024*512;
+
+
 //char IPADD[20];
 
 void *part1(void *buf1);
@@ -96,7 +98,8 @@ void *part1(void *buf1)
         recv(sock_id, echo, 5, 0);
         //      usleep(500);
         send_sum += send_len;
-        //        printf("part1 :send =%d\n send_sum = %u\n\n", send_len,send_sum);
+
+     //   printf("part1 send sum: %u\n",send_sum);
         if(send_sum >= off_len)
         {
             printf("part1 :send =%d\n send_sum = %u\n\n\n\n\n\n\n\n\n\n", send_len,send_sum);
